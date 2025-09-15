@@ -2,8 +2,8 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>vsb-cs-java1</groupId>
-	<artifactId>lab01</artifactId>
+	<groupId>cz.vsb.fei.java1</groupId>
+	<artifactId>java1-lab01</artifactId>
 	<version>0.0.1-SNAPHOST</version>
 	<packaging>jar</packaging>
 	<properties>
@@ -43,5 +43,22 @@
 			<version>5.11.0</version>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>cz.vsb.fei</groupId>
+            <artifactId>kelvin-java-unittest-support</artifactId>
+            <version>[0.1.4,)</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <repositories>
+        <repository>
+            <id>vsb-education-release</id>
+            <url>https://artifactory.cs.vsb.cz/repository/education-releases/</url>
+        </repository>
+        <repository>
+            <id>vsb-education-snapshot</id>
+            <url>https://artifactory.cs.vsb.cz/repository/education-snapshot/</url>
+        </repository>
+    </repositories>
+
 </project>

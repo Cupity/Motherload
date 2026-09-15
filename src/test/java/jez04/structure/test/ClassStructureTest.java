@@ -27,7 +27,7 @@ class ClassStructureTest {
         assertThat(() -> {
             try {
                 Class<?> greeting = helper.getClass("Greeting");
-                Method main = helper.getMethod(greeting, "main", void.class, String[].class);
+                Method main = helper.getMethod(greeting, "main.*", void.class, String[].class);
                 main.invoke(null, new String[1]);
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
@@ -51,7 +51,7 @@ class ClassStructureTest {
         assertThat(() -> {
             try {
                 Class<?> primes = helper.getClass("Primes");
-                Method main = helper.getMethod(primes, "main", void.class, String[].class);
+                Method main = helper.getMethod(primes, "main.*", void.class, String[].class);
                 main.invoke(null, new String[1]);
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);

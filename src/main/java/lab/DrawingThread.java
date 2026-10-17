@@ -19,9 +19,10 @@ public class DrawingThread extends AnimationTimer {
     private static final double TILE_SIZE = 60;
     private static final double SKY_HEIGHT = 80;
 
-    // position of the plain dirt texture in the sheet
     private static final int DIRT_COL = 0;
     private static final int DIRT_ROW = 0;
+
+    private static final double MAX_DELTA_T = 0.05;
 
     private final Canvas canvas;
     private final GraphicsContext gc;
@@ -40,7 +41,7 @@ public class DrawingThread extends AnimationTimer {
         this.canvas = canvas;
         this.gc = canvas.getGraphicsContext2D();
 
-        Image sheet = new Image(getClass().getResourceAsStream("motherload_textures.png"));
+        Image sheet = new Image(getClass().getResourceAsStream("tile_textures.png"));
         this.atlas = new TextureAtlas(sheet, ATLAS_COLUMNS, ATLAS_ROWS);
 
         this.miner = new Miner(385, 30);
@@ -100,6 +101,10 @@ public class DrawingThread extends AnimationTimer {
         double deltaT = (now - lastTime) / NANOSECONDS_IN_SECOND;
         lastTime = now;
 
+        if (deltaT > MAX_DELTA_T) {
+            deltaT = MAX_DELTA_T;
+        }
+
         double screenWidth = canvas.getWidth();
         double screenHeight = canvas.getHeight();
 
@@ -109,7 +114,7 @@ public class DrawingThread extends AnimationTimer {
         gc.setFill(Color.DARKGRAY);
         gc.fillRect(0, SKY_HEIGHT, screenWidth, screenHeight - SKY_HEIGHT);
 
-        miner.simulate(deltaT, screenWidth, screenHeight);
+        miner.simulate(deltaT, screenWidth, screenHeight, world);
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < columns; col++) {

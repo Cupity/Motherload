@@ -2,10 +2,9 @@ package lab;
 
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 
-public class Miner {
+public class Miner implements Drawable, Simulate {
 
     private enum Direction { LEFT, RIGHT, UP, DOWN }
     private static final int CELL_SIZE = 70;
@@ -26,7 +25,11 @@ public class Miner {
     private Point2D position;
     private Point2D speed;
 
-    private final Image sprite;
+    private final Tile[][] world;
+    private final double screenWidth;
+    private final double screenHeight;
+
+    private final TextureAtlas atlas;
     private Direction direction = Direction.LEFT;
 
     // the hitbox is only the body, not the drill
@@ -43,10 +46,13 @@ public class Miner {
     private boolean isLeftPressed = false;
     private boolean isRightPressed = false;
 
-    public Miner(double startX, double startY) {
+    public Miner(double startX, double startY, Tile[][] world, double screenWidth, double screenHeight, TextureAtlas atlas) {
         this.position = new Point2D(startX, startY);
         this.speed = Point2D.ZERO;
-        this.sprite = new Image(getClass().getResourceAsStream("miner_textures.png"));
+        this.world = world;
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
+        this.atlas = atlas;
     }
 
     public void handleKeyPressed(KeyCode code) {
@@ -93,12 +99,13 @@ public class Miner {
         this.speed = new Point2D(vx, vy);
     }
 
-    public void simulate(double deltaT, double screenWidth, double screenHeight, Tile[][] world) {
+    @Override
+    public void simulate(double deltaT) {
         position = new Point2D(position.getX() + speed.getX() * deltaT, position.getY());
-        Tile hitX = collideX(world);
+        Tile hitX = collideX();
 
         position = new Point2D(position.getX(), position.getY() + speed.getY() * deltaT);
-        Tile hitY = collideY(world);
+        Tile hitY = collideY();
 
         double minX = 0;
         double maxX = screenWidth - width;
@@ -126,7 +133,7 @@ public class Miner {
     }
 
     // returns the tile we hit while moving left or right (or null)
-    private Tile collideX(Tile[][] world) {
+    private Tile collideX() {
         Tile hit = null;
 
         for (Tile[] row : world) {
@@ -146,7 +153,7 @@ public class Miner {
     }
 
     // returns the tile we hit while moving down (or null), going up only blocks
-    private Tile collideY(Tile[][] world) {
+    private Tile collideY() {
         Tile hit = null;
 
         for (Tile[] row : world) {
@@ -184,6 +191,7 @@ public class Miner {
         }
     }
 
+    @Override
     public void draw(GraphicsContext gc) {
         int[] frame = switch (direction) {
             case LEFT, RIGHT -> SIDE_FRAME;
@@ -191,8 +199,6 @@ public class Miner {
             case UP -> UP_FRAME;
         };
 
-        double sx = frame[0] * CELL_SIZE;
-        double sy = frame[1] * CELL_SIZE;
         double bodyCenterX = BODY_X + BODY_WIDTH / 2;
 
         gc.save();
@@ -200,7 +206,7 @@ public class Miner {
         if (direction == Direction.RIGHT) {
             gc.scale(-1, 1);
         }
-        gc.drawImage(sprite, sx, sy, CELL_SIZE, CELL_SIZE,
+        atlas.draw(gc, frame[0], frame[1],
             -bodyCenterX * SPRITE_SCALE, -BODY_Y * SPRITE_SCALE,
             CELL_SIZE * SPRITE_SCALE, CELL_SIZE * SPRITE_SCALE);
         gc.restore();

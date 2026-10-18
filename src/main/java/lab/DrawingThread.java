@@ -1,5 +1,7 @@
 package lab;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import javafx.animation.AnimationTimer;
@@ -12,9 +14,13 @@ public class DrawingThread extends AnimationTimer {
 
     private static final double NANOSECONDS_IN_SECOND = 1_000_000_000.0;
 
-    // the texture sheet is a 7x7 grid
+    // the tile texture sheet is a 7x7 grid
     private static final int ATLAS_COLUMNS = 7;
     private static final int ATLAS_ROWS = 7;
+
+    // the miner sheet is an 8x7 grid
+    private static final int MINER_ATLAS_COLUMNS = 8;
+    private static final int MINER_ATLAS_ROWS = 7;
 
     private static final double TILE_SIZE = 60;
     private static final double SKY_HEIGHT = 80;
@@ -35,6 +41,10 @@ public class DrawingThread extends AnimationTimer {
     private final int rows;
     private final Tile[][] world;
 
+    // everything that is drawn (in this order) and everything that moves
+    private final List<Drawable> drawables = new ArrayList<>();
+    private final List<Simulate> simulables = new ArrayList<>();
+
     private long lastTime;
 
     public DrawingThread(Canvas canvas) {
@@ -44,14 +54,27 @@ public class DrawingThread extends AnimationTimer {
         Image sheet = new Image(getClass().getResourceAsStream("tile_textures.png"));
         this.atlas = new TextureAtlas(sheet, ATLAS_COLUMNS, ATLAS_ROWS);
 
-        this.miner = new Miner(385, 30);
-
         // how many tiles fit
         columns = (int) Math.ceil(canvas.getWidth() / TILE_SIZE);
         rows = (int) Math.ceil((canvas.getHeight() - SKY_HEIGHT) / TILE_SIZE);
 
+        // the world has to exist before the miner, the miner needs it for collisions
         world = new Tile[rows][columns];
         generateWorld();
+
+        Image minerSheet = new Image(getClass().getResourceAsStream("miner_textures.png"));
+        TextureAtlas minerAtlas = new TextureAtlas(minerSheet, MINER_ATLAS_COLUMNS, MINER_ATLAS_ROWS);
+
+        this.miner = new Miner(385, 30, world, canvas.getWidth(), canvas.getHeight(), minerAtlas);
+
+        // tiles first, the miner last so it is drawn on top
+        for (Tile[] row : world) {
+            for (Tile tile : row) {
+                drawables.add(tile);
+            }
+        }
+        drawables.add(miner);
+        simulables.add(miner);
 
         this.lastTime = System.nanoTime();
     }
@@ -77,23 +100,23 @@ public class DrawingThread extends AnimationTimer {
 
         if (row > 0) {
             if (depth > 0.7 && random.nextDouble() < 0.04) {
-                return new Tile(x, y, TILE_SIZE, 3, 2);   // lava
+                return new Tile(x, y, TILE_SIZE, 3, 2, atlas);   // lava
             }
             if (depth > 0.6 && random.nextDouble() < 0.02) {
-                return new Tile(x, y, TILE_SIZE, 4, 1);   // emerald
+                return new Tile(x, y, TILE_SIZE, 4, 1, atlas);   // emerald
             }
             if (depth > 0.5 && random.nextDouble() < 0.03) {
-                return new Tile(x, y, TILE_SIZE, 5, 1);   // gold
+                return new Tile(x, y, TILE_SIZE, 5, 1, atlas);   // gold
             }
             if (depth > 0.25 && random.nextDouble() < 0.05) {
-                return new Tile(x, y, TILE_SIZE, 1, 1);   // silver
+                return new Tile(x, y, TILE_SIZE, 1, 1, atlas);   // silver
             }
             if (random.nextDouble() < 0.08) {
-                return new Tile(x, y, TILE_SIZE, 0, 1);   // copper
+                return new Tile(x, y, TILE_SIZE, 0, 1, atlas);   // copper
             }
         }
 
-        return new Tile(x, y, TILE_SIZE, DIRT_COL, DIRT_ROW);
+        return new Tile(x, y, TILE_SIZE, DIRT_COL, DIRT_ROW, atlas);
     }
 
     @Override
@@ -114,13 +137,12 @@ public class DrawingThread extends AnimationTimer {
         gc.setFill(Color.DARKGRAY);
         gc.fillRect(0, SKY_HEIGHT, screenWidth, screenHeight - SKY_HEIGHT);
 
-        miner.simulate(deltaT, screenWidth, screenHeight, world);
-
-        for (int row = 0; row < rows; row++) {
-            for (int col = 0; col < columns; col++) {
-                world[row][col].draw(gc, atlas);
-            }
+        for (Simulate simulable : simulables) {
+            simulable.simulate(deltaT);
         }
-        miner.draw(gc);
+
+        for (Drawable drawable : drawables) {
+            drawable.draw(gc);
+        }
     }
 }

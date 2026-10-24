@@ -2,7 +2,9 @@ package lab;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.input.KeyEvent;
@@ -29,42 +31,63 @@ public class App extends Application {
     public void start(Stage primaryStage) {
         try {
             Rectangle2D screen = Screen.getPrimary().getBounds();
-            final double gameWidth = screen.getWidth();
-            final double gameHeight = screen.getHeight();
+            String css = getClass().getResource("application.css").toExternalForm();
 
-            canvas = new Canvas(gameWidth, gameHeight);
-            StackPane root = new StackPane(canvas);
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("application.fxml"));
+            Parent menuRoot = loader.load();
+            StartMenuController menu = loader.getController();
 
-            Scene scene = new Scene(root, gameWidth, gameHeight);
-            scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+            if (menu == null) {
+                throw new IllegalStateException("Controller class is not set in application.fxml (Scene Builder -> Controller -> lab.StartMenuController)");
+            }
 
-            canvas.scaleXProperty().bind(scene.widthProperty().divide(gameWidth));
-            canvas.scaleYProperty().bind(scene.heightProperty().divide(gameHeight));
+            menu.setOnStart(() -> startGame(primaryStage, screen, css));
 
-            DrawingThread drawingThread = new DrawingThread(canvas);
-            timer = drawingThread;
+            Scene menuScene = new Scene(menuRoot, screen.getWidth(), screen.getHeight());
+            menuScene.getStylesheets().add(css);
 
-            scene.setOnKeyPressed((KeyEvent event) -> {
-                drawingThread.getMiner().handleKeyPressed(event.getCode());
-            });
-            scene.setOnKeyReleased((KeyEvent event) -> {
-                drawingThread.getMiner().handleKeyReleased(event.getCode());
-            });
-
-            primaryStage.setScene(scene);
+            primaryStage.setScene(menuScene);
             primaryStage.setMaximized(true);
             primaryStage.setTitle("Motherload");
             primaryStage.show();
             primaryStage.setOnCloseRequest(this::exitProgram);
-
-            timer.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    private void startGame(Stage primaryStage, Rectangle2D screen, String css) {
+        final double gameWidth = screen.getWidth();
+        final double gameHeight = screen.getHeight();
+
+        canvas = new Canvas(gameWidth, gameHeight);
+        StackPane root = new StackPane(canvas);
+
+        Scene scene = new Scene(root, gameWidth, gameHeight);
+        scene.getStylesheets().add(css);
+
+        canvas.scaleXProperty().bind(scene.widthProperty().divide(gameWidth));
+        canvas.scaleYProperty().bind(scene.heightProperty().divide(gameHeight));
+
+        DrawingThread drawingThread = new DrawingThread(canvas);
+        timer = drawingThread;
+
+        scene.setOnKeyPressed((KeyEvent event) -> {
+            drawingThread.getMiner().handleKeyPressed(event.getCode());
+        });
+        scene.setOnKeyReleased((KeyEvent event) -> {
+            drawingThread.getMiner().handleKeyReleased(event.getCode());
+        });
+
+        primaryStage.setScene(scene);
+        timer.start();
+    }
+
     @Override
     public void stop() throws Exception {
-        timer.stop();
+        if (timer != null) {
+            timer.stop();
+        }
         super.stop();
     }
 

@@ -1,1 +1,13 @@
 /* JavaFX CSS - Leave this comment until you have at least create one rule which uses -fx-Property */
+
+.start-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: green;
+    -fx-font-size: 40px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.start-button:hover {
+    -fx-text-fill: white;
+}
